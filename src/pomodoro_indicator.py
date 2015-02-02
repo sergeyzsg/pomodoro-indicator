@@ -111,7 +111,6 @@ class Pomodoro_Indicator(GObject.GObject):
 	def on_session_end(self,widget):
 		self.active = True
 		self.countdown_break()
-		interval = int(self.break_length*60/36*1000)
 		self.frame = 0
 		self.notification.update('Pomodoro-Indicator',
 					_('Session ends - break starts'), os.path.join(comun.ICONDIR,'pomodoro-indicator-%s.svg'%(self.theme)))
@@ -119,7 +118,7 @@ class Pomodoro_Indicator(GObject.GObject):
 		if self.play_sounds:
 			self.play(self.session_sound_file)
 		self.indicator.set_icon(os.path.join(comun.ICONDIR,'pomodoro-indicator-%s.svg'%(self.theme)))
-		GLib.timeout_add(interval, self.countdown_break)				
+		GLib.timeout_add(1000, self.countdown_break)				
 	
 	def on_scroll(self, widget,steps,direcction):
 		if self.active:
@@ -242,9 +241,7 @@ class Pomodoro_Indicator(GObject.GObject):
 					_('Session starts'), os.path.join(comun.ICONDIR,'pomodoro-start-%s.svg'%(self.theme)))
 		self.notification.show()
 		self.countdown_session()
-		interval = int(self.session_length*60/36*1000)
-		print(interval)
-		GLib.timeout_add(interval, self.countdown_session)
+		GLib.timeout_add(1000, self.countdown_session)
 
 	def on_pomodoro_stop(self,widget):
 		self.active = False
@@ -262,10 +259,17 @@ class Pomodoro_Indicator(GObject.GObject):
 			return False
 		else:
 			self.animate = True
-			afile = os.path.join(comun.ICONDIR,'pomodoro-indicator-%s-%02d.svg'%(self.theme,self.frame))
+			icon = int(((36*self.frame)/60)/self.session_length)
+			afile = os.path.join(comun.ICONDIR,'pomodoro-indicator-%s-%02d.svg'%(self.theme,icon))
 			self.indicator.set_icon(afile)
+			seconds = 60 - int(self.frame % 60)
+			if seconds == 60:
+				seconds = 0
+			minutes = int(self.session_length - (self.frame/60))
+			label = "%02d:%02d" % (minutes, seconds)
+			self.indicator.set_label(label, label)
 			self.frame += 1
-			if self.frame == 36:
+			if self.frame == (60 * self.session_length):
 				self.emit('session_end')
 				return False
 			return True
@@ -278,10 +282,17 @@ class Pomodoro_Indicator(GObject.GObject):
 			return False
 		else:
 			self.animate = True
-			afile = os.path.join(comun.ICONDIR,'pomodoro-indicator-%s-%02d.svg'%(self.theme,self.frame))
+			icon = int(((36*self.frame)/60)/self.break_length)
+			afile = os.path.join(comun.ICONDIR,'pomodoro-indicator-%s-%02d.svg'%(self.theme, icon))
 			self.indicator.set_icon(afile)
+			seconds = 60 - int(self.frame % 60)
+			if seconds == 60:
+				seconds = 0
+			minutes = int(self.break_length - (self.frame/60))
+			label = "%02d:%02d" % (minutes, seconds)
+			self.indicator.set_label(label, label)
 			self.frame += 1
-			if self.frame == 36:
+			if self.frame == (60 * self.break_length):
 				self.emit('break_end')
 				return False
 			return True
